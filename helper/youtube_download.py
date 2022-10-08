@@ -13,7 +13,7 @@ def download_video(video_id):
         ],
         'prefer_ffmpeg': False,
         'keepvideo': False,
-        'outtmpl': os.path.join("process",'%(title)s.%(ext)s')
+        'outtmpl': os.path.join("process",f'{video_id}.wav')
     }
-    info = YoutubeDL(ydl_opts).extract_info('https://www.youtube.com/watch?v=' + video_id, download=True)
-    return info['title'] + '.wav'
+    YoutubeDL(ydl_opts).extract_info('https://www.youtube.com/watch?v=' + video_id, download=True)
+    return video_id + '.wav'
