@@ -1,3 +1,5 @@
+import sys
+from singleton.prediction_model import PredictionModel
 from pydub import AudioSegment
 import os
 import shutil
@@ -7,8 +9,6 @@ import librosa
 import numpy as np
 import tensorflow as tf
 from PIL import Image
-from tensorflow.keras.models import Model, load_model
-from spleeter.separator import Separator
 
 def detect_leading_silence(sound, chunk_size=10):
     silence_threshold = sound.dBFS * 1.5
@@ -27,12 +27,6 @@ def preprocessing(audio):
     del audio
     gc.collect()
     return trimmed_sound
-
-def extract_instrumental(audio, name):
-    separator = Separator('spleeter:2stems')
-    separator.separate_to_file(audio, 'instrumental/')
-    os.rename('instrumental/'+name.split('.')[0]+'/accompaniment.wav', 'instrumental/'+name)
-    shutil.rmtree('instrumental/'+name.split(".")[0])
 
 def scale_minmax(X, min=0.0, max=1.0):
     X_std = (X - X.min()) / (X.max() - X.min())
@@ -79,11 +73,6 @@ def extracting(audio,filename):
     gc.collect()
     return data
 
-def get_model():
-    model_path = 'models/model_v1.h5'
-    model = load_model(model_path)
-    return model
-
 def get_spectrogram(path):
     IMAGE_SIZE = 224
     img = tf.keras.preprocessing.image.load_img(path, target_size=(IMAGE_SIZE, IMAGE_SIZE)
@@ -102,17 +91,19 @@ def get_bpm(path):
     return tempo
 
 def prediction(audio):
-    model = get_model()
+    model = PredictionModel().model
+    model.compile()
+    model.run_eagerly = True
     class_labels = ["Anxious","Chill","Focus","Party","Romance","Sad"]
     predictions = model.predict(audio)
-    mood = class_labels[np.argmax(predictions)]   
-    feature_model = Model(model.input,model.layers[-6].output)
+    mood = class_labels[np.argmax(predictions)]
+    feature_model = PredictionModel().feature_model
     features = feature_model.predict(audio)
     return mood,features
 
 def process_file(filename: str):
     # Insert Process Data into DB (ProcessedMusic)
-    extract_instrumental("process/"+filename, filename)
+    os.system("python3 helper/separator.py -f " + filename)
     audio = AudioSegment.from_wav("instrumental/"+filename)
     audio = preprocessing(audio)
     extract_list = extracting(audio,filename)
