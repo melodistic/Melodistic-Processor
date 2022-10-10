@@ -1,10 +1,12 @@
-from helper.process_file import process_file
+from helper.process_file import get_duration, process_file
 from helper.youtube_download import download_video
 
 def youtube_processor(args):
     (file_name, song_name, duration) = download_video(args['video_id'])
-    process_file(args['user_id'], file_name, song_name, duration)
+    process_file(args['user_id'], file_name, song_name, duration, "process/")
     return {"success": True}
 
 def file_processor(args):
-    return args['file_path']
+    duration = get_duration(args['file_path'])
+    process_file(args['user_id'], args['file_path'], args['file_name'], duration)
+    return {"success": True}

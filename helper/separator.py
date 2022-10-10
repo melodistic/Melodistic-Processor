@@ -18,5 +18,5 @@ if __name__ == "__main__":
     for opt, arg in opts:
         if opt in ("-f", "--filename"):
             filename = arg
-            separate("process/"+ filename, filename)
+            separate(filename, filename.split('/')[-1])
             sys.exit(0)

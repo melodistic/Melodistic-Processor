@@ -22,5 +22,7 @@ class FileProcessor(Processor):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('file_path',type=str)
+        parser.add_argument('file_name',type=str)
+        parser.add_argument('user_id',type=str)
         args=parser.parse_args()
         return file_processor(args)

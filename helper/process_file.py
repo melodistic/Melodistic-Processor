@@ -75,6 +75,9 @@ def extracting(audio,filename):
     gc.collect()
     return data
 
+def get_duration(path):
+    return int(librosa.get_duration(filename=path))
+
 def get_spectrogram(path):
     IMAGE_SIZE = 224
     img = tf.keras.preprocessing.image.load_img(path, target_size=(IMAGE_SIZE, IMAGE_SIZE)
@@ -103,7 +106,7 @@ def prediction(audio):
     features = feature_model.predict(audio)
     return mood, features
 
-def process_file(user_id: str, filename: str, song_name: str, duration: int):
+def process_file(user_id: str, filename: str, song_name: str, duration: int, prefix_path: str = ""):
     conn = connect("host=20.24.21.220 dbname=melodistic user=melodistic password=melodistic-pwd")
     cur = conn.cursor()
     cur.execute("SELECT * FROM add_process_music(%s,%s,%s)", [user_id, song_name, str(duration)])
@@ -114,11 +117,10 @@ def process_file(user_id: str, filename: str, song_name: str, duration: int):
         os.makedirs('features/processed/' + str(process_id), exist_ok=True)
     except:
         pass
-    os.system("python3 helper/separator.py -f " + filename)
+    os.system("python3 helper/separator.py -f \"" + prefix_path+filename+"\"")
     audio = AudioSegment.from_wav("instrumental/"+filename)
     audio = preprocessing(audio)
     extract_list = extracting(audio,filename)
-    data = []
     mood_list = []
     bpm_list = []
     for file in extract_list:
@@ -142,5 +144,8 @@ def process_file(user_id: str, filename: str, song_name: str, duration: int):
     cur.close()
     conn.commit()
     conn.close()
-    os.remove("instrumental/"+filename)
-    os.remove("process/"+filename)
+    try:
+        os.remove("instrumental/"+filename)
+        os.remove("process/"+filename)
+    except:
+        pass
