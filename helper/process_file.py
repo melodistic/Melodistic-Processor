@@ -1,4 +1,3 @@
-import sys
 from singleton.prediction_model import PredictionModel
 from pydub import AudioSegment
 import os

@@ -4,5 +4,7 @@ flask-restful==0.3.9
 pydub==0.25.1
 numpy==1.21.1
 psycopg2==2.9.3
-scikit-learn==1.0.2
-pandas==1.4.1
+spleeter==2.3.0
+tensorflow==2.8.0
+librosa==0.8.0
+Pillow==9.0.1
