@@ -9,6 +9,8 @@ import librosa
 import numpy as np
 import tensorflow as tf
 from PIL import Image
+import json
+from psycopg2 import connect
 
 def detect_leading_silence(sound, chunk_size=10):
     silence_threshold = sound.dBFS * 1.5
@@ -99,24 +101,46 @@ def prediction(audio):
     mood = class_labels[np.argmax(predictions)]
     feature_model = PredictionModel().feature_model
     features = feature_model.predict(audio)
-    return mood,features
+    return mood, features
 
-def process_file(filename: str):
-    # Insert Process Data into DB (ProcessedMusic)
+def process_file(user_id: str, filename: str, song_name: str, duration: int):
+    conn = connect("host=20.24.21.220 dbname=melodistic user=melodistic password=melodistic-pwd")
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM add_process_music(%s,%s,%s)", [user_id, song_name, str(duration)])
+    process_id = cur.fetchone()[0]
+    conn.commit()
+    try:
+        os.makedirs('song/processed/' + str(process_id), exist_ok=True)
+        os.makedirs('features/processed/' + str(process_id), exist_ok=True)
+    except:
+        pass
     os.system("python3 helper/separator.py -f " + filename)
     audio = AudioSegment.from_wav("instrumental/"+filename)
     audio = preprocessing(audio)
     extract_list = extracting(audio,filename)
     data = []
+    mood_list = []
+    bpm_list = []
     for file in extract_list:
         spectrogram_path = convert_audio_to_mel_spectogram("extract/"+file)
         spectrogram = get_spectrogram(spectrogram_path)
         bpm = get_bpm(file)
         mood, features = prediction(spectrogram)
-        # Write Features into JSON file
-        # Insert Data into DB (Music, ProcessedMusicExtract)
-        data.append({"file":file,"mood":mood,"bpm":int(bpm)})
-    # Update ProcessedMusic
+        file_path =  "song/processed/" + str(process_id) + "/"+file
+        feature_path = "features/processed/" + str(process_id) + "/" + file.split(".")[0] + ".json"
+        shutil.move("extract/" +file, file_path)
+        with open(feature_path, 'w') as f:
+            json.dump(features.flatten().tolist(), f)
+            f.close()
+        cur.execute("SELECT * FROM add_music_extract(%s,%s,%s,%s,%s,%s)", [process_id, file, file_path, feature_path, bpm, mood])
+        mood_list.append(mood)
+        bpm_list.append(bpm)
+        os.remove(spectrogram_path)
+    mood = max(set(mood_list), key=mood_list.count)
+    bpm = sum(bpm_list)/len(bpm_list)
+    cur.execute("SELECT * FROM update_process_music(%s,%s,%s)", [process_id, mood, bpm])
+    cur.close()
+    conn.commit()
+    conn.close()
     os.remove("instrumental/"+filename)
     os.remove("process/"+filename)
-    return data

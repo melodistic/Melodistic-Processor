@@ -14,6 +14,7 @@ class YoutubeProcessor(Processor):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('video_id',type=str)
+        parser.add_argument('user_id',type=str)
         args=parser.parse_args()
         return youtube_processor(args)
 
