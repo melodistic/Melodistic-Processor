@@ -117,6 +117,7 @@ def process_file(user_id: str, filename: str, song_name: str, duration: int, pre
     except:
         pass
     os.system("python3 helper/separator.py -f \"" + prefix_path+filename+"\"")
+    filename = filename.split('/')[-1]
     audio = AudioSegment.from_wav("instrumental/"+filename)
     audio = preprocessing(audio)
     extract_list = extracting(audio,filename)
