@@ -7,6 +7,10 @@ def youtube_processor(args):
     return {"success": True}
 
 def file_processor(args):
-    duration = get_duration(args['file_path'])
-    process_file(args['user_id'], args['file_path'], args['file_name'], duration)
+    print(args)
+    try:
+        duration = get_duration(args['file_path'])
+        process_file(args['user_id'], args['file_path'], args['file_name'], duration)
+    except Exception as e:
+        print(e)
     return {"success": True}
