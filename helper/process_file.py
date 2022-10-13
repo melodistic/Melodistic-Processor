@@ -57,6 +57,8 @@ def convert_audio_to_mel_spectogram(filename):
 def extracting(audio,filename):
     size = len(audio)
     time_30_sec = 30 * 1000
+    if size < time_30_sec:
+        raise Exception("Audio file is too short")
     audio_list = []
     for i in range(20):
         start = random.randint(0,size-time_30_sec)
@@ -117,6 +119,11 @@ def process_file(user_id: str, filename: str, song_name: str, duration: int, pre
     except:
         pass
     os.system("python3 helper/separator.py -f \"" + prefix_path+filename+"\"")
+    try:
+        os.remove(filename)
+        os.remove("process/"+filename)
+    except:
+        pass
     filename = filename.split('/')[-1]
     audio = AudioSegment.from_wav("instrumental/"+filename)
     audio = preprocessing(audio)
@@ -146,6 +153,5 @@ def process_file(user_id: str, filename: str, song_name: str, duration: int, pre
     conn.close()
     try:
         os.remove("instrumental/"+filename)
-        os.remove("process/"+filename)
     except:
         pass
