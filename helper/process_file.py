@@ -1,3 +1,4 @@
+from threading import Thread
 from singleton.prediction_model import PredictionModel
 from pydub import AudioSegment
 import os
@@ -10,6 +11,7 @@ import tensorflow as tf
 from PIL import Image
 import json
 from psycopg2 import connect
+from flask import make_response
 
 def detect_leading_silence(sound, chunk_size=10):
     silence_threshold = sound.dBFS * 1.5
@@ -107,23 +109,23 @@ def prediction(audio):
     features = feature_model.predict(audio)
     return mood, features
 
-def process_file(user_id: str, filename: str, song_name: str, duration: int, prefix_path: str = ""):
+def processor(user_id: str, filename: str, song_name: str, duration: int):
     conn = connect("host=20.24.21.220 dbname=melodistic user=melodistic password=melodistic-pwd")
     cur = conn.cursor()
     cur.execute("SELECT * FROM add_process_music(%s,%s,%s)", [user_id, song_name, str(duration)])
     process_id = cur.fetchone()[0]
     conn.commit()
+    thread = Thread(target=process_file,kwargs={"process_id":process_id,"filename":filename, "cur": cur, "conn": conn})
+    thread.start()
+    return process_id
+
+def process_file(process_id: str, filename: str, cur = None, conn = None):
     try:
         os.makedirs('song/processed/' + str(process_id), exist_ok=True)
         os.makedirs('features/processed/' + str(process_id), exist_ok=True)
     except:
         pass
-    os.system("python3 helper/separator.py -f \"" + prefix_path+filename+"\"")
-    try:
-        os.remove(filename)
-        os.remove("process/"+filename)
-    except:
-        pass
+    os.system("python3 helper/separator.py -f \"" +filename+"\"")
     filename = filename.split('/')[-1]
     audio = AudioSegment.from_wav("instrumental/"+filename)
     audio = preprocessing(audio)

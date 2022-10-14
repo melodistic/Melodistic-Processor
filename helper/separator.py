@@ -8,7 +8,8 @@ def separate(audio, filename):
     separator = Separator('spleeter:2stems')
     separator.separate_to_file(audio, 'instrumental/')
     os.rename('instrumental/'+filename.split('.')[0]+'/accompaniment.wav', 'instrumental/'+filename)
-    shutil.rmtree('instrumental/'+filename.split(".")[0])
+    shutil.rmtree('instrumental/'+filename.split('.')[0])
+    os.remove(filename)
 
 if __name__ == "__main__":
     try:
