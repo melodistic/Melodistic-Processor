@@ -110,13 +110,20 @@ def prediction(audio):
     return mood, features
 
 def processor(user_id: str, filename: str, song_name: str, duration: int):
-    conn = connect("host=20.24.21.220 dbname=melodistic user=melodistic password=melodistic-pwd")
+    db_host = os.getenv('DB_HOST')
+    db_name = os.getenv('DB_NAME')
+    db_user = os.getenv('DB_USER')
+    db_password = os.getenv('DB_PASSWORD')
+    db_url = f"host={db_host} dbname={db_name} user={db_user} password={db_password}"
+    conn = connect(db_url)
     cur = conn.cursor()
     cur.execute("SELECT * FROM add_process_music(%s,%s,%s)", [user_id, song_name, str(duration)])
     process_id = cur.fetchone()[0]
+    cur.close()
     conn.commit()
     thread = Thread(target=process_file,kwargs={"process_id":process_id,"filename":filename, "cur": cur, "conn": conn})
     thread.start()
+    conn.close()
     return process_id
 
 def process_file(process_id: str, filename: str, cur = None, conn = None):
